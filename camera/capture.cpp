@@ -1,3 +1,9 @@
+/*
+	Dept. of Atmospheric Sciences - IAG/USP
+	Created by Ícaro Vaz Freire on 24/12/2021.
+	Supervisor Prof. Márcia Yamasoe.
+	São Paulo, Brazil.
+*/
 #include "esp_camera.h"
 #include "FS.h"
 #include "SD_MMC.h"
