@@ -9,103 +9,95 @@
 #include <RTClib.h>
 #include <Adafruit_MLX90614.h>
 
-// References to external functions
-String createTempDataFile(String dir, DateTime now);
+#define CHIP 10
+#define DATA_DIR "data/"
 
-
-// Instanciate global variables
-const int chipSelect = 10;
+// Instanciates global variables
 RTC_DS1307 rtc;
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 String tempDataPath;
 DateTime today;
 
-
-// Use built-in LED as a status indicator
-void blink(int freq) {
-	int period = (int)(1000.0f / freq);
-	digitalWrite(LED_BUILTIN, HIGH);
-	delay(period);
-	digitalWrite(LED_BUILTIN, LOW);
-	delay(period);
-};
-
-// Initialize RTC
-RTC_DS1307 initRTC() {
-	Serial.println("Initializing RTC...");
-
-	RTC_DS1307 rtc = RTC_DS1307();
-	rtc.begin();
-	if (!rtc.isrunning()) {
-		Serial.println("Error initializing RTC.");
-		while (1) blink(10);
-	}
-	Serial.println("RTC initialized.");
-	return rtc;
+// Creates temperature data file path
+String createTempDataPath(DateTime now) {
+  String filename = (String)now.year()+(String)now.month()+(String)now.day()+".txt";
+  return DATA_DIR + filename;
 }
 
-// Initialize SD card and check for errors
-void initSDcard() {
-	Serial.println("Initializing SD card...");
-	if (!SD.begin(chipSelect)) {
-		Serial.println("SD card failed.");
-		while(1) blink(10);
-	}
-	Serial.println("SD card initialized.");
+// Checks if file exists. And if it does not, creates it
+void checkFile(String path) {
+  if (!SD.exists(path)) {
+    File file = SD.open(path, FILE_WRITE);
+    if (file) {
+      file.println("# Adafruit MRX90614 - GY-906 sensor");
+      file.println("# Infra-red temperature measurements from the atmosphere and the environment.");
+      file.println("# Location: Guarulhos, SP");
+      file.println("time,env_t,obj_t");  
+      file.close();
+    } else {
+      Serial.println("Could not create data file " + path);
+      while(1);
+    }
+  }
 }
-
-// Initilize MLX90614 infra-red sensor and check for errors
-void initIRsensor() {
-	if (!mlx.begin()) {
-		Serial.println("Error connecting to MLX sensor. Check wiring.");
-		while(1) blink(10);
-	};
-}
-
 
 // Main function
 void setup() {
-	pinMode(LED_BUILTIN, OUTPUT);
-	digitalWrite(LED_BUILTIN, LOW);
-
-	// Initialize serial port
+	// Initializes serial port
 	Serial.begin(9600);
-	while (!Serial) blink(5);
+	while (!Serial);
 
 	Serial.println("Adafruit MLX90614 infra-red temperature sensoring");
 
 
-	// Initialize stuff
-	rtc = initRTC();
-	initSDcard();
-	initIRsensor();
+	// Initializes stuff
+	rtc = RTC_DS1307();
+  rtc.begin();
+  if (!rtc.isrunning()) {
+    Serial.println("RTC failed.");
+    while(1);
+  }
+  
+  if (!SD.begin(CHIP)) {
+    Serial.println("SD card failed.");
+    while(1);
+  }
+  
+	if (!mlx.begin()) { 
+    Serial.println("MLX90614 initialized.");
+	  while(1);
+	}
+
+  Serial.println("Everything initialized.");
 	
 
-	// Define paths to save the data
+	// Defines path to save the data
 	today = rtc.now();
-	tempDataPath = createTempDataFile("data/", today);
+	tempDataPath = createTempDataPath(today);
 
-	Serial.println("System initilized.");
-	digitalWrite(LED_BUILTIN, HIGH);
+	Serial.println("System ready.");
 }
 
+// Main loop
 void loop() {
 	DateTime now = rtc.now();
 
-	// Check if a day has elapsed
+	// Checks if a day has elapsed
 	if (today.day() != now.day()) {
-		tempDataPath = createTempDataFile("data/", now);
-		Serial.println("A day has elapsed.");
+		tempDataPath = createTempDataPath(now);
 		today = now;
+    Serial.println("A day has elapsed.");
 	}
 
-	// Create string that will be stored in the text file
-	String dataString = "";
-	dataString += (String)now.timestamp(DateTime::TIMESTAMP_TIME) + ",";
+	// Creates string that will be stored in the text file
+	String dataString;
+	dataString  = (String)now.timestamp(DateTime::TIMESTAMP_TIME) + ",";
 	dataString += (String)mlx.readAmbientTempC() + ",";
 	dataString += (String)mlx.readObjectTempC();
 
-	// Write to the text file
+  checkFile(tempDataPath);
+
+	// Writes to the text file
 	File file = SD.open(tempDataPath, FILE_WRITE);
 	if (file) {
 		file.println(dataString);
@@ -113,6 +105,6 @@ void loop() {
 	} else Serial.println("Failed!");
 	file.close();
 
-	// Wait
+	// Waits
 	delay(1000);
 }
