@@ -1,7 +1,7 @@
 /*
 	Dept. of Atmospheric Sciences - IAG/USP
 	Created by Ícaro Vaz Freire on 24/12/2021.
-	Supervisor Prof. Márcia Yamasoe.
+	Supervisor Prof. Márcia Akemi Yamasoe.
 	São Paulo, Brazil.
 */
 #include <SPI.h>
@@ -17,6 +17,7 @@ RTC_DS1307 rtc;
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 String tempDataPath;
 DateTime today;
+int delayTime;
 
 // Creates temperature data file path
 String createTempDataPath(DateTime now) {
@@ -31,7 +32,7 @@ void checkFile(String path) {
     if (file) {
       file.println("# Adafruit MRX90614 - GY-906 sensor");
       file.println("# Infra-red temperature measurements from the atmosphere and the environment.");
-      file.println("# Location: Guarulhos, SP");
+      file.println("# Location: São Paulo, SP");
       file.println("time,env_t,obj_t");  
       file.close();
     } else {
@@ -39,6 +40,10 @@ void checkFile(String path) {
       while(1);
     }
   }
+}
+
+void loadConfig(String path) {
+  // Load configuration from file at path
 }
 
 // Main function
@@ -69,7 +74,9 @@ void setup() {
 	}
 
   Serial.println("Everything initialized.");
-	
+
+  // Loading configuration file
+  loadConfig("config.txt");
 
 	// Defines path to save the data
 	today = rtc.now();
@@ -106,5 +113,5 @@ void loop() {
 	file.close();
 
 	// Waits
-	delay(1000);
+	delay(60000);
 }

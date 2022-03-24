@@ -17,7 +17,7 @@
 
 struct Config {
     char ssid[32];
-    char password[64];  
+    char password[64];
 } cfg;
 
 void startCameraServer();

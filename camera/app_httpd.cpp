@@ -36,6 +36,8 @@
 #define FACE_COLOR_CYAN   (FACE_COLOR_BLUE | FACE_COLOR_GREEN)
 #define FACE_COLOR_PURPLE (FACE_COLOR_BLUE | FACE_COLOR_RED)
 
+#define IMAGE_SIZE 8192
+
 typedef struct {
         size_t size; //number of values used for filtering
         size_t index; //current value index
@@ -590,17 +592,16 @@ static esp_err_t index_handler(httpd_req_t *req){
     return httpd_resp_send(req, (const char *)index_ov2640_html_gz, index_ov2640_html_gz_len);
 }
 
-// Return contents in path folder
-esp_err_t path_handler(httpd_req_t *req){
-    String path = "/";
-    String resp = "Index of "+path+"\nType\tName\tSize\n";
 
+// Return contents in path folder
+esp_err_t ls_handler(httpd_req_t *req){
     char content[128];
     memset(content, '\0', sizeof(content));
     size_t recv_size = min(req->content_len, sizeof(content));
     int ret = httpd_req_recv(req, content, recv_size);
 
-    path = (String)content;
+    String path = (String)content;
+    String resp = "Index of "+path+"\nType\tName\tSize\n";
     
     File root = SD_MMC.open(path);
     if (!root) {
@@ -621,6 +622,58 @@ esp_err_t path_handler(httpd_req_t *req){
     httpd_resp_set_hdr(req, "Content-Type", "text/plain; charset=UTF-8");
     httpd_resp_send(req, resp.c_str(), HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
+}
+
+// Read from text file
+esp_err_t read_handler(httpd_req_t *req){
+  char content[128];
+  memset(content, '\0', sizeof(content));
+  size_t recv_size = min(req->content_len, sizeof(content));
+  int ret = httpd_req_recv(req, content, recv_size);
+
+  String path = (String)content;
+  String resp = "";
+
+  File file = SD_MMC.open(path);
+  if(file) {
+    if (!file.isDirectory())
+      while(file.available()) resp += (char)file.read();
+  }
+  file.close();
+  
+  httpd_resp_set_hdr(req, "Content-Type", "text/plain; charset=UTF-8");
+  httpd_resp_send(req, resp.c_str(), HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
+}
+
+// Display requested image
+esp_err_t image_handler(httpd_req_t *req){
+  esp_err_t res = ESP_OK;
+  
+  char content[128];
+  memset(content, '\0', sizeof(content));
+  size_t recv_size = min(req->content_len, sizeof(content));
+  int ret = httpd_req_recv(req, content, recv_size);
+
+  String path = (String)content;
+
+  File file = SD_MMC.open(path);
+  if (file) {
+    uint8_t img_data[IMAGE_SIZE];
+    memset(img_data, '\0', IMAGE_SIZE);
+
+    int ret = min(file.size(), IMAGE_SIZE);
+    file.read(img_data, ret);
+
+    
+    
+    res = httpd_resp_set_type(req, "image/jpeg");
+    httpd_resp_send(req, (char*)img_data, HTTPD_RESP_USE_STRLEN);
+    file.close();
+  }
+
+  httpd_resp_send(req, "Error", HTTPD_RESP_USE_STRLEN);
+  return res;
 }
 
 void startCameraServer(){
@@ -661,11 +714,24 @@ void startCameraServer(){
         .user_ctx  = NULL
     };
 
-    httpd_uri_t path_uri = {
-      
+    httpd_uri_t ls_uri = {
         .uri       = "/ls",
         .method    = HTTP_POST,
-        .handler   = path_handler,
+        .handler   = ls_handler,
+        .user_ctx  = NULL
+    };
+
+    httpd_uri_t read_uri = {
+        .uri       = "/read",
+        .method    = HTTP_POST,
+        .handler   = read_handler,
+        .user_ctx  = NULL
+    };
+
+    httpd_uri_t image_uri = {
+        .uri       = "/image",
+        .method    = HTTP_POST,
+        .handler   = image_handler,
         .user_ctx  = NULL
     };
 
@@ -694,7 +760,9 @@ void startCameraServer(){
         httpd_register_uri_handler(camera_httpd, &cmd_uri);
         httpd_register_uri_handler(camera_httpd, &status_uri);
         httpd_register_uri_handler(camera_httpd, &capture_uri);
-        httpd_register_uri_handler(camera_httpd, &path_uri);
+        httpd_register_uri_handler(camera_httpd, &ls_uri);
+        httpd_register_uri_handler(camera_httpd, &read_uri);
+        httpd_register_uri_handler(camera_httpd, &image_uri);
     }
 
     config.server_port += 1;
