@@ -16,8 +16,8 @@
 #include "camera_pins.h"
 
 struct Config {
-    char ssid[32];
-    char password[64];
+    char ssid[32] = "IFnet";
+    char password[64] = "";
 } cfg;
 
 void startCameraServer();
@@ -39,41 +39,6 @@ void initSDcard() {
         while(1);  
     }
     Serial.println("SD card is ready.");
-}
-
-// Load configuration
-void loadConfig(fs::FS &fs, const char* path, struct Config* cfg) {
-    Serial.println("Loading configuration from " + (String)path + "...");
-
-    File file = fs.open(path);
-    if (!file) {
-        Serial.println("Unable to load configuration file.");
-        while(1);  
-    }
-    Serial.println("Configuration file found.");
-
-    int i = -1;
-    int j = 0;
-    char line[64];
-    memset(line, '\0', 64);
-    while(file.available()) {
-        char c = file.read();
-        if (c == '\n') {
-            if (j == 0) strcpy(cfg->ssid, line);
-            if (j == 1) strcpy(cfg->password, line);
-            memset(line, '\0', 64);
-            i = -1;
-            j++;
-        }
-        if (i != -1) {
-            line[i] = c;
-            i++;  
-        }
-        if (c == '\t') i = 0;
-    }
-    Serial.println("End configuration.");
-
-    file.close();
 }
 
 // Load camera configuraton
@@ -156,6 +121,7 @@ void initWiFi(const char* ssid, const char* password) {
 void syncClock(int gmtOffset_sec, int daylightOffset_sec, const char* ntpServer) {
     Serial.println("Synchronizing clocks...");
     configTime(gmtOffset_sec * 3600, daylightOffset_sec * 3600, ntpServer);
+    Serial.println("Clocks sync!");
 }
 
 void setup() {
@@ -164,14 +130,16 @@ void setup() {
     Serial.println();
 
     Serial.println("ESP32-CAM module");
+    Serial.print("ESP Board MAC Address:  ");
+    Serial.println(WiFi.macAddress());
   
     // Load configuration
     camera_config_t config = configCamera();
   
     // Initialize stuff
-    initSDcard();
+    // initSDcard();
     initCamera(config);
-    loadConfig(SD_MMC, (const char*)"/CONFIG.TXT", &cfg);
+    // loadConfig(SD_MMC, (const char*)"/CONFIG.TXT", &cfg);
     initWiFi(cfg.ssid, cfg.password);
 
     // Start HTTP server
@@ -186,6 +154,6 @@ void setup() {
 }
 
 void loop() {
-    capture(SD_MMC);
-    delay(5000);
+    // capture(SD_MMC);
+    delay(10000);
 }

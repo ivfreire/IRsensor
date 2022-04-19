@@ -25,23 +25,6 @@ String createTempDataPath(DateTime now) {
   return DATA_DIR + filename;
 }
 
-// Checks if file exists. And if it does not, creates it
-void checkFile(String path) {
-  if (!SD.exists(path)) {
-    File file = SD.open(path, FILE_WRITE);
-    if (file) {
-      file.println("# Adafruit MRX90614 - GY-906 sensor");
-      file.println("# Infra-red temperature measurements from the atmosphere and the environment.");
-      file.println("# Location: São Paulo, SP");
-      file.println("time,env_t,obj_t");  
-      file.close();
-    } else {
-      Serial.println("Could not create data file " + path);
-      while(1);
-    }
-  }
-}
-
 void loadConfig(String path) {
   // Load configuration from file at path
 }
@@ -101,9 +84,7 @@ void loop() {
 	dataString  = (String)now.timestamp(DateTime::TIMESTAMP_TIME) + ",";
 	dataString += (String)mlx.readAmbientTempC() + ",";
 	dataString += (String)mlx.readObjectTempC();
-
-  checkFile(tempDataPath);
-
+  
 	// Writes to the text file
 	File file = SD.open(tempDataPath, FILE_WRITE);
 	if (file) {
@@ -113,5 +94,5 @@ void loop() {
 	file.close();
 
 	// Waits
-	delay(60000);
+	delay(1000);
 }
