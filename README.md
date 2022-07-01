@@ -2,15 +2,31 @@
 
 <img src='https://odatacolocation.com/wp-content/uploads/2020/07/photo-1499346030926-9a72daac6c63-750x390.jpeg' width='100%'>
 
-Clouds have a significant effect on the local weather. Acting not only as a cover to the surface deflecting sunlight back to space, but also absorbing and reflecting infrared radiation to the ground.
+Clouds have a significant effect on the planet's climate. They serve not only as a cover to the surface deflecting sunlight back to space. But also as an intermediate layer for infrared radiation from the ground.
 
-In order to understand the role of clouds in the radioactive tranfers occuring in the atmosphere, we must have an effective way of measuring the temperature of their bases. Unfortunately, remote sensing equipment can not be used for this purpuse since the bottom of clouds is not visible from space. Currently, high-cost delicate in-site infrared sensors are being used to measure their temperature.
-
-In this project, a low-cost infrared sensor is mounted to an Arduino board to collect temperature data from the clouds in the city of São Paulo. We will then compare the measurements taken by the Arduino set to the ones taken by a high-end infrared termometer available in the CIENTEC park.
+In this project, an infrared sensor is mounted to an Arduino board and used to measure the temperature of cloud bases. By measuring their temperature, we can calculate the total irradiance from clouds and thus estimate their effect on the surface temperature and local weather. It is crucial to create models and make accurate predictions about the climate.
 
 ## Getting started
 
-All the Arduino C code is available here. In order to run you must install the correct addons for the ESP32 camera and for the Adafruit DHT shield, which logs the temperature to a SD card for later analysis.
+All the Arduino code written for this project is available in this repository. Installing the correct Arduino IDE plugins for the ESP32 Camera and Adafruit DHT shield is necessary to compile the code correctly.
+
+### Components
+
+- ESP32-S AI-Thinker Camera
+- MLX90614 IR Sensor
+- Arduino Uno Board
+- Adafruit Data Logger Shield
+- SD card
+
+## Data
+
+<img src='plots/hourly_mean_temp.png' width='100%'>
+
+The temperature data captured by the infrared sensor is stored in text files on the SD card by the Arduino shield. The files have a CSV format with time, environment, and object temperatures. All temperature measurements are in degrees Celcius.
+
+## Analysis
+
+Currently, we are working with the Arduino data only. It is impossible to estimate the total cloud irradiance based only on the Arduino data. Furthermore, we shall compare the data points we presently have to that taken by a high-end infrared sensor in the CIENTEC park.
 
 ## Contribuitors
 
